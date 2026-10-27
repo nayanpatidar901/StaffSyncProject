@@ -11,9 +11,9 @@ The project uses the **MERN stack**:
 
 ## Current project status
 
-The Express API and MongoDB models are ready. The dashboard's leave request list loads from the API and approve/decline actions update MongoDB. The other dashboard sections still show example interface data; they are not yet connected to the API. Login, employee/manager/HR permissions, and production hosting have not been added.
+The hosted dashboard reads and writes employee records, leave requests, daily attendance, announcements, and training records through the Express API and MongoDB. The dashboard includes add/edit/remove flows, leave approvals, check-in/check-out, attendance summaries and CSV export, and live overview metrics. Attendance history can be viewed for the last week or month.
 
-Use sample data while learning. Do not put real employee information on a public deployment until authentication and permissions are implemented.
+This is still a learning/demo app: login and server-enforced HR, manager, and employee permissions are not implemented. The public API can be reached without an account. Use synthetic records only; do not upload real employee or payroll data.
 
 ## Host a public preview on Render
 
@@ -23,7 +23,7 @@ Use sample data while learning. Do not put real employee information on a public
 2. Choose **New → Blueprint**, select `nayanpatidar901/StaffSyncProject`, and deploy the `main` branch. Render reads `render.yaml` and offers the free web service settings.
 3. When Render asks for `MONGODB_URI`, copy the value from your private local `.env` file into Render's secret field. Do not put the URI in GitHub or `render.yaml`.
 4. After Render creates the service, open its **Connect → Outbound** details. In MongoDB Atlas, add the Render service's outbound IP ranges to **Network Access**. This keeps the database allowlist limited to Render's published ranges. If the first deploy cannot connect to Atlas, add the ranges and redeploy.
-5. Wait for the health check to pass, then open the public `onrender.com` URL shown in the Render dashboard.
+5. Wait for the health check to pass, then open the public `onrender.com` URL shown in the Render dashboard. The current hosted preview is [staffsync-icdg.onrender.com](https://staffsync-icdg.onrender.com).
 
 This is a public demo, not a production HR deployment: there is no login or permission system yet, and the API is accessible to anyone who can reach the URL. Keep only synthetic sample records in Atlas until authentication and role checks have been added. Render's free service may sleep during quiet periods.
 
@@ -36,7 +36,8 @@ StaffSyncproject/
 │   ├── seed.js          # Adds example data to empty collections
 │   └── server.js        # Express API and web server
 ├── public/
-│   └── index.html       # StaffSync dashboard
+│   ├── index.html       # StaffSync dashboard structure and styling
+│   └── app.js           # Dynamic API-backed dashboard interactions
 ├── .env.example         # Safe example of required settings
 ├── .gitignore           # Excludes .env and node_modules from Git
 ├── package.json         # Dependencies and run commands
@@ -128,6 +129,7 @@ The API sends and receives JSON. You can visit `GET` links in a browser. For req
 | Create a leave request | `POST /api/leaves` |
 | Approve or decline a leave request | `PATCH /api/leaves/LEAVE_ID` |
 | List attendance | `GET /api/attendance` |
+| Daily attendance trend | `GET /api/attendance/trend?days=7` (use 30 for a month) |
 | Check in | `POST /api/attendance/check-in` |
 | Check out | `PATCH /api/attendance/ATTENDANCE_ID/check-out` |
 | List/create/delete announcements | `GET`, `POST /api/announcements`, `DELETE /api/announcements/ANNOUNCEMENT_ID` |
@@ -200,5 +202,5 @@ If your local branch is named `main`, use `main` in the final command instead of
 
 ## Next steps
 
-For a production HR system, add user registration and login, secure passwords, and enforce HR/manager/employee permissions on the server before connecting these API records to the rest of the dashboard. Then deploy the server and frontend and set the `MONGODB_URI` as a private environment variable in the hosting provider.
+Before using this with real employee data, add authentication, secure password storage, server-side role and record access checks, request rate limits, and a private production database. Keep the MongoDB connection string in the hosting provider's secret environment variables.
 

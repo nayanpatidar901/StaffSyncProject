@@ -94,6 +94,17 @@ app.get('/api/attendance', asyncRoute(async (req, res) => {
   if (req.query.employee) filter.employee = req.query.employee;
   res.json(await Attendance.find(filter).populate('employee', 'name department').sort({ date: -1 }));
 }));
+app.get('/api/attendance/trend', asyncRoute(async (req, res) => {
+  const days = Math.max(7, Math.min(31, Number.parseInt(req.query.days, 10) || 7));
+  const start = new Date(); start.setUTCHours(0, 0, 0, 0); start.setUTCDate(start.getUTCDate() - (days - 1));
+  const trend = await Attendance.aggregate([
+    { $match: { date: { $gte: start } } },
+    { $group: { _id: { $dateToString: { format: '%Y-%m-%d', date: '$date' } }, total: { $sum: 1 }, present: { $sum: { $cond: [{ $in: ['$status', ['Present', 'Remote']] }, 1, 0] } }, remote: { $sum: { $cond: [{ $eq: ['$status', 'Remote'] }, 1, 0] } } } },
+    { $sort: { _id: 1 } }
+  ]);
+  res.json(trend);
+}));
+
 app.post('/api/attendance/check-in', asyncRoute(async (req, res) => {
   const { employeeId, location = 'Office', status = 'Present' } = req.body;
   const start = new Date(); start.setHours(0, 0, 0, 0);
@@ -143,7 +154,7 @@ app.use('/api', (req, res) => res.status(404).json({ message: 'API route not fou
 app.use((err, req, res, next) => {
   console.error(err);
   if (err.name === 'ValidationError') return res.status(400).json({ message: err.message });
-  if (err.code === 11000) return res.status(409).json({ message: 'That email is already in use.' });
+  if (err.code === 11000) return res.status(409).json({ message: err.keyPattern?.employee ? 'This employee already has an attendance record today.' : 'That email is already in use.' });
   if (err.name === 'CastError') return res.status(400).json({ message: 'The provided ID or value is invalid.' });
   res.status(500).json({ message: 'Something went wrong on the server.' });
 });
