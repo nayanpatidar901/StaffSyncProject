@@ -142,7 +142,7 @@ Replace `EMPLOYEE_ID`, `LEAVE_ID`, and similar values with the `_id` returned by
 ```powershell
 $employee = @{
   name = "Taylor Reed"
-  email = "taylor@example.com"
+  email = "taylor.reed@example.com"
   department = "Design"
   role = "Product Designer"
   location = "Bengaluru"
