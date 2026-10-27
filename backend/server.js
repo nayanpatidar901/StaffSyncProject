@@ -13,6 +13,18 @@ const app = express();
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '..', 'public')));
 
+const APP_TIME_ZONE = process.env.APP_TIME_ZONE || 'Asia/Kolkata';
+function appDateKey(date = new Date()) {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: APP_TIME_ZONE, year: 'numeric', month: '2-digit', day: '2-digit'
+  }).formatToParts(date);
+  const part = (type) => parts.find((item) => item.type === type).value;
+  return `${part('year')}-${part('month')}-${part('day')}`;
+}
+function utcStartOfDay(dateKey) {
+  return new Date(`${dateKey}T00:00:00.000Z`);
+}
+
 // A single place for friendly API errors.
 function asyncRoute(handler) {
   return (req, res, next) => Promise.resolve(handler(req, res, next)).catch(next);
@@ -86,7 +98,8 @@ app.delete('/api/leaves/:id', asyncRoute(async (req, res) => {
 app.get('/api/attendance', asyncRoute(async (req, res) => {
   const filter = {};
   if (req.query.date) {
-    const start = new Date(`${req.query.date}T00:00:00`);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(req.query.date)) return res.status(400).json({ message: 'Date must use YYYY-MM-DD format.' });
+    const start = utcStartOfDay(req.query.date);
     const end = new Date(start);
     end.setDate(end.getDate() + 1);
     filter.date = { $gte: start, $lt: end };
@@ -96,7 +109,7 @@ app.get('/api/attendance', asyncRoute(async (req, res) => {
 }));
 app.get('/api/attendance/trend', asyncRoute(async (req, res) => {
   const days = Math.max(7, Math.min(31, Number.parseInt(req.query.days, 10) || 7));
-  const start = new Date(); start.setUTCHours(0, 0, 0, 0); start.setUTCDate(start.getUTCDate() - (days - 1));
+  const start = utcStartOfDay(appDateKey()); start.setUTCDate(start.getUTCDate() - (days - 1));
   const trend = await Attendance.aggregate([
     { $match: { date: { $gte: start } } },
     { $group: { _id: { $dateToString: { format: '%Y-%m-%d', date: '$date' } }, total: { $sum: 1 }, present: { $sum: { $cond: [{ $in: ['$status', ['Present', 'Remote']] }, 1, 0] } }, remote: { $sum: { $cond: [{ $eq: ['$status', 'Remote'] }, 1, 0] } } } },
@@ -107,8 +120,7 @@ app.get('/api/attendance/trend', asyncRoute(async (req, res) => {
 
 app.post('/api/attendance/check-in', asyncRoute(async (req, res) => {
   const { employeeId, location = 'Office', status = 'Present' } = req.body;
-  const start = new Date(); start.setHours(0, 0, 0, 0);
-  const end = new Date(start); end.setDate(end.getDate() + 1);
+  const start = utcStartOfDay(appDateKey());
   const record = await Attendance.create({ employee: employeeId, date: start, checkIn: new Date(), location, status });
   await record.populate('employee', 'name department');
   res.status(201).json(record);
