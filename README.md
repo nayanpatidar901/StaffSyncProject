@@ -33,6 +33,15 @@ StaffSyncproject/
 
 ## Run StaffSync locally
 
+### 0. Get the project code
+
+If you already have the project folder, open it in VS Code and use **Terminal → New Terminal**. Otherwise, open PowerShell in the folder where you want the project and run:
+
+```powershell
+git clone https://github.com/nayanpatidar901/StaffSyncProject.git
+cd StaffSyncProject
+```
+
 ### 1. Install Node.js
 
 Install the current LTS version of Node.js from [nodejs.org](https://nodejs.org/). This also installs npm. Open a new PowerShell window after the installation.
