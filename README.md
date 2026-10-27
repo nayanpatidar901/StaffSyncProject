@@ -1,206 +1,42 @@
 # StaffSync
 
-StaffSync is a web-based HR dashboard starter for a small organization. It brings employee records, leave requests, attendance, company announcements, and training into one place.
+A web-based HR demo for employee records, leave requests, attendance, announcements, and training.
 
-The project uses the **MERN stack**:
+- **Live demo:** https://staffsync-icdg.onrender.com
+- **GitHub:** https://github.com/nayanpatidar901/StaffSyncProject
 
-- **MongoDB** stores employees, leave requests, attendance, announcements, and training.
-- **Express.js** provides the API used by the website.
-- **React** is the UI library in the MERN stack; the current dashboard is plain HTML, CSS, and JavaScript while the project is being built out.
-- **Node.js** runs the Express server.
+## Features
 
-## Current project status
+- Browse and manage employees
+- Submit and review leave requests
+- Record attendance and export reports
+- Manage training paths and announcements
+- View live dashboard metrics from MongoDB
 
-The hosted dashboard reads and writes employee records, leave requests, daily attendance, announcements, and training records through the Express API and MongoDB. The dashboard includes add/edit/remove flows, leave approvals, check-in/check-out, attendance summaries and CSV export, and live overview metrics. Attendance history can be viewed for the last week or month.
+## Tech
 
-This is still a learning/demo app: login and server-enforced HR, manager, and employee permissions are not implemented. The public API can be reached without an account. Use synthetic records only; do not upload real employee or payroll data.
+Node.js, Express, MongoDB Atlas, HTML, CSS, and JavaScript.
 
-## Host a public preview on Render
+## Run locally
 
-`render.yaml` is ready for a Render web service. Render serves the site and API from one public URL, and deploys the `main` branch from GitHub. Render's free web service is suitable for a demo, but it goes to sleep after 15 minutes without traffic and can take time to wake up. See [Render's free service limits](https://render.com/docs/free).
-
-1. Sign in to [Render](https://dashboard.render.com/) and connect your GitHub account if asked.
-2. Choose **New → Blueprint**, select `nayanpatidar901/StaffSyncProject`, and deploy the `main` branch. Render reads `render.yaml` and offers the free web service settings.
-3. When Render asks for `MONGODB_URI`, copy the value from your private local `.env` file into Render's secret field. Do not put the URI in GitHub or `render.yaml`.
-4. After Render creates the service, open its **Connect → Outbound** details. In MongoDB Atlas, add the Render service's outbound IP ranges to **Network Access**. This keeps the database allowlist limited to Render's published ranges. If the first deploy cannot connect to Atlas, add the ranges and redeploy.
-5. Wait for the health check to pass, then open the public `onrender.com` URL shown in the Render dashboard. The current hosted preview is [staffsync-icdg.onrender.com](https://staffsync-icdg.onrender.com).
-
-This is a public demo, not a production HR deployment: there is no login or permission system yet, and the API is accessible to anyone who can reach the URL. Keep only synthetic sample records in Atlas until authentication and role checks have been added. Render's free service may sleep during quiet periods.
-
-## Project files
-
-```text
-StaffSyncproject/
-├── backend/
-│   ├── models/          # MongoDB document shapes (Mongoose)
-│   ├── seed.js          # Adds example data to empty collections
-│   └── server.js        # Express API and web server
-├── public/
-│   ├── index.html       # StaffSync dashboard structure and styling
-│   └── app.js           # Dynamic API-backed dashboard interactions
-├── .env.example         # Safe example of required settings
-├── .gitignore           # Excludes .env and node_modules from Git
-├── package.json         # Dependencies and run commands
-├── render.yaml          # Render hosting configuration
-└── README.md
-```
-
-## Run StaffSync locally
-
-### 0. Get the project code
-
-If you already have the project folder, open it in VS Code and use **Terminal → New Terminal**. Otherwise, open PowerShell in the folder where you want the project and run:
+You need Node.js and a MongoDB Atlas database.
 
 ```powershell
 git clone https://github.com/nayanpatidar901/StaffSyncProject.git
 cd StaffSyncProject
-```
-
-### 1. Install Node.js
-
-Install the current LTS version of Node.js from [nodejs.org](https://nodejs.org/). This also installs npm. Open a new PowerShell window after the installation.
-
-### 2. Create a free MongoDB Atlas database
-
-StaffSync connects to MongoDB Atlas using the Mongoose library. You do not need a MongoDB app plugin to run the website.
-
-1. Create a MongoDB Atlas account and a free cluster at [mongodb.com/atlas](https://www.mongodb.com/atlas/database).
-2. In Atlas, open **Database Access** and create a database user. This user is separate from your Atlas website login. Save its password privately.
-3. Open **Network Access** and add your current IP address so your computer can connect.
-4. In the cluster, choose **Connect → Drivers → Node.js** and copy the connection string.
-5. Replace `<password>` in the connection string with your database user's password. If the password includes special characters such as `@` or `/`, URL-encode them. Add `/staffsync` before the `?` so the database is named `staffsync`.
-
-The final connection string will look similar to this, with your own values:
-
-```text
-mongodb+srv://myUser:myEncodedPassword@cluster-name.mongodb.net/staffsync?retryWrites=true&w=majority
-```
-
-### 3. Create your local environment file
-
-In PowerShell, go to the folder containing this README and run:
-
-```powershell
+npm install
 Copy-Item .env.example .env
 ```
 
-Open `.env` in your code editor. Replace the example `MONGODB_URI` with your Atlas connection string and save it. Keep this file private. `.gitignore` prevents `.env` from being uploaded to GitHub; never paste the real connection string into the README or a public chat.
-
-### 4. Install, add sample data, and start the app
-
-Run these commands from the project folder:
+Add your private Atlas connection string to `.env`, then run:
 
 ```powershell
-npm install
 npm run seed
 npm run dev
 ```
 
-Now open <http://localhost:5000> in your browser. Leave the PowerShell window running while you use the site. Stop the server with **Ctrl+C**.
+Open http://localhost:5000. Seeding only adds sample data to empty collections.
 
-`npm run seed` adds example employees, leave requests, announcements, and training only when each collection is empty. It does not erase or replace existing records. You can skip this step if you prefer to start with an empty database.
+## Demo safety
 
-To start without the auto-restart development helper, use `npm start` instead of `npm run dev`.
-
-## Check the database connection
-
-Open <http://localhost:5000/api/health>. A successful connection returns:
-
-```json
-{"ok":true,"database":"connected"}
-```
-
-If the server says `Missing MONGODB_URI`, create the `.env` file and check its connection string. If Atlas reports a network error, check that your current IP address is allowed in Atlas **Network Access**.
-
-## Use the API
-
-The API sends and receives JSON. You can visit `GET` links in a browser. For requests that create or edit data (`POST`, `PATCH`, or `DELETE`), use PowerShell, Postman, or the Thunder Client extension in VS Code.
-
-| What | Method and URL |
-| --- | --- |
-| Check server/database | `GET /api/health` |
-| List employees | `GET /api/employees` |
-| Search employees | `GET /api/employees?search=Priya` |
-| Filter employees | `GET /api/employees?department=Design` |
-| Add employee | `POST /api/employees` |
-| Get/edit/delete one employee | `GET`, `PATCH`, or `DELETE /api/employees/EMPLOYEE_ID` |
-| List leave requests | `GET /api/leaves` |
-| List pending leave requests | `GET /api/leaves?status=Pending` |
-| Create a leave request | `POST /api/leaves` |
-| Approve or decline a leave request | `PATCH /api/leaves/LEAVE_ID` |
-| List attendance | `GET /api/attendance` |
-| Daily attendance trend | `GET /api/attendance/trend?days=7` (use 30 for a month) |
-| Check in | `POST /api/attendance/check-in` |
-| Check out | `PATCH /api/attendance/ATTENDANCE_ID/check-out` |
-| List/create/delete announcements | `GET`, `POST /api/announcements`, `DELETE /api/announcements/ANNOUNCEMENT_ID` |
-| List/create/edit/delete training | `GET`, `POST /api/training`, `PATCH /api/training/TRAINING_ID`, `DELETE /api/training/TRAINING_ID` |
-
-Replace `EMPLOYEE_ID`, `LEAVE_ID`, and similar values with the `_id` returned by MongoDB. For example, first list employees at <http://localhost:5000/api/employees> and copy the `_id` of the employee you want.
-
-### Example: add an employee in PowerShell
-
-```powershell
-$employee = @{
-  name = "Taylor Reed"
-  email = "taylor.reed@example.com"
-  department = "Design"
-  role = "Product Designer"
-  location = "Bengaluru"
-} | ConvertTo-Json
-
-Invoke-RestMethod -Method Post `
-  -Uri http://localhost:5000/api/employees `
-  -ContentType "application/json" `
-  -Body $employee
-```
-
-### Example: create a leave request
-
-Use an employee `_id` from `GET /api/employees`:
-
-```powershell
-$leave = @{
-  employee = "PASTE_EMPLOYEE_ID_HERE"
-  type = "Annual leave"
-  startDate = "2026-12-10"
-  endDate = "2026-12-12"
-  reason = "Family trip"
-} | ConvertTo-Json
-
-Invoke-RestMethod -Method Post `
-  -Uri http://localhost:5000/api/leaves `
-  -ContentType "application/json" `
-  -Body $leave
-```
-
-The employee ID must exist in the database. A leave end date cannot be earlier than its start date. To approve it, send a `PATCH` request to `/api/leaves/LEAVE_ID` with JSON like `{"status":"Approved","reviewedBy":"Jordan Davis"}`. Use `"Declined"` to decline it.
-
-## MongoDB collections
-
-Mongoose creates these collections when records are first saved:
-
-- `employees` — name, email, department, role, location, and status.
-- `leaverequests` — employee reference, leave type, dates, reason, and approval status.
-- `attendances` — employee reference, date, check-in/out times, location, and status.
-- `announcements` — title, message, audience, author, and publish date.
-- `trainings` — course title, category, module count, learner count, and progress.
-
-## Put the project on GitHub
-
-GitHub stores the code. MongoDB Atlas stores the app's data. The GitHub plugin is not required for local development. This project is connected to the GitHub repository `nayanpatidar901/StaffSyncProject`. If you are setting up a separate copy of the project folder, configure its Git remote to point to your repository before pushing.
-
-For a fresh copy with no remote, run the following in PowerShell and replace the URL with your repository's HTTPS URL:
-
-```powershell
-git add .
-git commit -m "Add StaffSync MongoDB backend"
-git remote add origin https://github.com/YOUR-USERNAME/YOUR-REPOSITORY.git
-git push -u origin master
-```
-
-If your local branch is named `main`, use `main` in the final command instead of `master`. GitHub should receive `.env.example`, but must not receive `.env`.
-
-## Next steps
-
-Before using this with real employee data, add authentication, secure password storage, server-side role and record access checks, request rate limits, and a private production database. Keep the MongoDB connection string in the hosting provider's secret environment variables.
-
+This public demo has no sign-in or role-based access controls. Its API is open, so use synthetic data only—never real employee or payroll information.
