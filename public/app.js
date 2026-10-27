@@ -8,6 +8,8 @@ const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;',
 const initials = name => String(name || 'Employee').trim().split(/\s+/).slice(0,2).map(x => x[0]).join('').toUpperCase();
 const dateLabel = date => date ? new Date(date).toLocaleDateString(undefined,{month:'short',day:'numeric',timeZone:'UTC'}) : '—';
 const todayISO = () => appDateKey();
+const dateKey = value => value ? new Date(value).toISOString().slice(0,10) : '';
+const isDateInRange = (start,end,today=todayISO()) => dateKey(start) <= today && dateKey(end) >= today;
 const daysBetween = (a,b) => Math.max(1,Math.round((new Date(b)-new Date(a))/86400000)+1);
 const fmtTime = date => date ? new Date(date).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'}) : '—';
 async function api(url, options={}) {
@@ -19,7 +21,7 @@ async function api(url, options={}) {
 function toast(message){const el=$('#toast');el.textContent=message;el.classList.add('show');clearTimeout(window.toastTimer);window.toastTimer=setTimeout(()=>el.classList.remove('show'),3000);}
 function loadingRow(cols,message='Loading…'){return `<tr><td colspan="${cols}" class="muted-cell">${esc(message)}</td></tr>`;}
 function dateRange(item){const start=dateLabel(item.startDate),end=dateLabel(item.endDate);return start===end?start:`${start} – ${end}`;}
-function isOnLeave(employeeId){const today=new Date();return state.leaves.some(l=>String(l.employee?._id||l.employee)===String(employeeId)&&l.status==='Approved'&&new Date(l.startDate)<=today&&new Date(l.endDate)>=today);}
+function isOnLeave(employeeId){return state.leaves.some(l=>String(l.employee?._id||l.employee)===String(employeeId)&&l.status==='Approved'&&isDateInRange(l.startDate,l.endDate));}
 function renderEmployees(){
  const body=$('#peopleBody'),q=($('#peopleSearch')?.value||'').toLowerCase(),department=$('#peopleDepartment')?.value||'',status=$('#peopleStatus')?.value||'';
  const departments=[...new Set(state.employees.map(x=>x.department).filter(Boolean))].sort(),select=$('#peopleDepartment');
@@ -36,7 +38,7 @@ function renderLeaves(){
  table.innerHTML=items.length?items.map((r,i)=>{const person=r.employee||{},[bg,ink]=palette[i%palette.length];return `<tr><td><div class="person-cell"><div class="avatar" style="background:${bg};color:${ink}">${esc(initials(person.name))}</div><div><strong>${esc(person.name||'Employee')}</strong><small>${esc(person.department||'')}</small></div></div></td><td>${esc(r.type)}</td><td>${esc(dateRange(r))}</td><td>${daysBetween(r.startDate,r.endDate)} day(s)</td><td>${esc(r.reason||'—')}</td><td><span class="status ${r.status==='Pending'?'pending':r.status==='Declined'?'absent':''}">${esc(r.status)}</span></td><td>${r.status==='Pending'?`<div class="leave-actions"><button class="approve" data-leave-decision="Approved" data-id="${esc(r._id)}" aria-label="Approve ${esc(person.name)}">✓</button><button class="reject" data-leave-decision="Declined" data-id="${esc(r._id)}" aria-label="Decline ${esc(person.name)}">×</button></div>`:'—'}</td></tr>`;}).join(''):loadingRow(7,'No requests in this status.');
 }
 function renderAttendance(){
- const present=state.attendance.filter(x=>['Present','Remote'].includes(x.status)),remote=state.attendance.filter(x=>x.status==='Remote').length,approved=state.leaves.filter(x=>x.status==='Approved'&&new Date(x.startDate)<=new Date()&&new Date(x.endDate)>=new Date()).length,active=state.employees.filter(x=>x.status==='Active').length,missing=Math.max(0,active-present.length);
+ const present=state.attendance.filter(x=>['Present','Remote'].includes(x.status)),remote=state.attendance.filter(x=>x.status==='Remote').length,approved=state.leaves.filter(x=>x.status==='Approved'&&isDateInRange(x.startDate,x.endDate)).length,active=state.employees.filter(x=>x.status==='Active').length,missing=Math.max(0,active-present.length);
  $('#presentCount').textContent=present.length;$('#attendancePresent').textContent=present.length;$('#attendanceRemote').textContent=remote;$('#onLeaveCount').textContent=approved;$('#attendanceLeave').textContent=approved;$('#attendanceMissing').textContent=missing;
  const rate=active?`${(present.length/active*100).toFixed(1)}%`:'0%';$('#attendanceRate').textContent=rate;$('#attendanceRatePanel').textContent=rate;$('#attendanceRingRate').textContent=rate;$('#attendanceDate').textContent=new Date().toLocaleDateString(undefined,{month:'long',day:'numeric',year:'numeric',timeZone:APP_TIME_ZONE});$('#overviewAttendanceDate').textContent=new Date().toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric',timeZone:APP_TIME_ZONE});
  const body=$('#attendanceBody');body.innerHTML=state.attendance.length?state.attendance.map(a=>{const e=a.employee||{};return `<tr><td>${esc(e.name||'Employee')}</td><td>${esc(e.department||'')}</td><td>${esc(fmtTime(a.checkIn))}</td><td>${esc(a.location||'Office')}</td><td><span class="status">${esc(a.status)}</span></td><td>${a.checkOut?esc(fmtTime(a.checkOut)):`<button class="row-action" data-checkout="${esc(a._id)}">Check out</button>`}</td></tr>`;}).join(''):loadingRow(6,'No attendance has been recorded today. Use Check in to add the first record.');
