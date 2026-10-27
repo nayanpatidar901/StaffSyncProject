@@ -154,6 +154,6 @@ if (!process.env.MONGODB_URI) {
   process.exit(1);
 }
 mongoose.connect(process.env.MONGODB_URI)
-  .then(() => app.listen(port, () => console.log(`StaffSync is running at http://localhost:${port}`)))
+  .then(() => app.listen(port, '0.0.0.0', () => console.log(`StaffSync is running on port ${port}`)))
   .catch((error) => { console.error('Could not connect to MongoDB:', error.message); process.exit(1); });
 
