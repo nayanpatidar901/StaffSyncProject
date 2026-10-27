@@ -15,6 +15,18 @@ The Express API and MongoDB models are ready. The dashboard's leave request list
 
 Use sample data while learning. Do not put real employee information on a public deployment until authentication and permissions are implemented.
 
+## Host a public preview on Render
+
+`render.yaml` is ready for a Render web service. Render serves the site and API from one public URL, and deploys the `main` branch from GitHub. Render's free web service is suitable for a demo, but it goes to sleep after 15 minutes without traffic and can take time to wake up. See [Render's free service limits](https://render.com/docs/free).
+
+1. Sign in to [Render](https://dashboard.render.com/) and connect your GitHub account if asked.
+2. Choose **New → Blueprint**, select `nayanpatidar901/StaffSyncProject`, and deploy the `main` branch. Render reads `render.yaml` and offers the free web service settings.
+3. When Render asks for `MONGODB_URI`, copy the value from your private local `.env` file into Render's secret field. Do not put the URI in GitHub or `render.yaml`.
+4. After Render creates the service, open its **Connect → Outbound** details. In MongoDB Atlas, add the Render service's outbound IP ranges to **Network Access**. This keeps the database allowlist limited to Render's published ranges. If the first deploy cannot connect to Atlas, add the ranges and redeploy.
+5. Wait for the health check to pass, then open the public `onrender.com` URL shown in the Render dashboard.
+
+This is a public demo, not a production HR deployment: there is no login or permission system yet, and the API is accessible to anyone who can reach the URL. Keep only synthetic sample records in Atlas until authentication and role checks have been added. Render's free service may sleep during quiet periods.
+
 ## Project files
 
 ```text
@@ -28,6 +40,7 @@ StaffSyncproject/
 ├── .env.example         # Safe example of required settings
 ├── .gitignore           # Excludes .env and node_modules from Git
 ├── package.json         # Dependencies and run commands
+├── render.yaml          # Render hosting configuration
 └── README.md
 ```
 
