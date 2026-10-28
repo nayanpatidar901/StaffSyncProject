@@ -4,6 +4,7 @@ const palette = [['#e9e6f4','#625684'],['#e4edf1','#587b88'],['#f5ecd5','#93733a
 const APP_TIME_ZONE = 'Asia/Kolkata';
 function appDateKey(date = new Date()){const parts=new Intl.DateTimeFormat('en-CA',{timeZone:APP_TIME_ZONE,year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(date);const part=type=>parts.find(x=>x.type===type).value;return `${part('year')}-${part('month')}-${part('day')}`;}
 const state = { employees: [], leaves: [], attendance: [], training: [], announcements: [], trend: [], currentEmployee: null };
+let currentUser = null;
 const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const initials = name => String(name || 'Employee').trim().split(/\s+/).slice(0,2).map(x => x[0]).join('').toUpperCase();
 const dateLabel = date => date ? new Date(date).toLocaleDateString(undefined,{month:'short',day:'numeric',timeZone:'UTC'}) : '—';
@@ -18,6 +19,39 @@ async function api(url, options={}) {
   if(!response.ok) throw new Error(payload.message || `Request failed (${response.status})`);
   return payload;
 }
+function setAuthMode(mode){
+ const registering=mode==='register';$('#loginForm').hidden=registering;$('#registerForm').hidden=!registering;
+ $('#authTitle').textContent=registering?'Create your account':'Welcome back';
+ $('#authSubtitle').textContent=registering?'Join your team on StaffSync.':'Sign in to continue to your workspace.';
+ $('#authSwitchText').textContent=registering?'Already have an account?':'New to StaffSync?';
+ $('#authSwitch').textContent=registering?'Sign in':'Create an account';$('#authError').hidden=true;$('#authError').textContent='';
+}
+function showAuthGate(){currentUser=null;document.body.classList.remove('authenticated');$('#authGate').hidden=false;setAuthMode('login');}
+function applyRolePermissions(){
+ document.body.classList.remove('role-employee','role-manager','role-hr');document.body.classList.add('authenticated',`role-${currentUser.role}`);$('#authGate').hidden=true;$('button[data-page="people"]').hidden=currentUser.role==='employee';$('#page-people').hidden=currentUser.role==='employee';
+ const employee=currentUser.role==='employee',manager=currentUser.role==='manager',hr=currentUser.role==='hr';
+ if(employee){$('button[data-page="people"]').hidden=true;$('#page-people').hidden=true;}
+ $$('[data-action]').forEach(button=>{const action=button.dataset.action;button.hidden=action==='invite'||action==='announce'? !hr:action==='course'?!(hr||manager):action==='export'?employee:false;});
+ const profile=$('.profile');if(!$('#logoutBtn')){const signout=document.createElement('button');signout.id='logoutBtn';signout.className='profile-signout';signout.type='button';signout.textContent='Sign out';profile.append(signout);signout.addEventListener('click',async()=>{try{await api('/api/auth/logout',{method:'POST'});}finally{showAuthGate();}});}
+ $('.profile-info strong').textContent=currentUser.name;$('.profile-info span').textContent=currentUser.email;
+ let rolePill=$('#sessionRole');if(!rolePill){rolePill=document.createElement('small');rolePill.id='sessionRole';rolePill.className='role-pill';$('.profile-info').append(rolePill);}rolePill.textContent=currentUser.role;
+ $$('.profile .avatar,.top-actions>.avatar').forEach(node=>node.textContent=initials(currentUser.name));
+ const selector=$('#checkinEmployee');if(selector)selector.hidden=employee;
+}
+async function initializeAuth(){
+ try{const session=await api('/api/auth/me');currentUser=session.user;applyRolePermissions();await reloadAll();}
+ catch{showAuthGate();}
+}
+$('#authSwitch').addEventListener('click',()=>setAuthMode($('#registerForm').hidden?'register':'login'));
+$('#registerRole').addEventListener('change',e=>{$('#registrationCodeWrap').hidden=e.target.value==='employee';});
+async function submitAuthForm(form,endpoint){
+ const button=form.querySelector('button[type="submit"]');button.disabled=true;const error=$('#authError');error.hidden=true;
+ try{const data=Object.fromEntries(new FormData(form).entries());const result=await api(endpoint,{method:'POST',body:JSON.stringify(data)});currentUser=result.user;form.reset();$('#registrationCodeWrap').hidden=true;applyRolePermissions();await reloadAll();}
+ catch(e){error.textContent=e.message;error.hidden=false;}
+ finally{button.disabled=false;}
+}
+$('#loginForm').addEventListener('submit',e=>{e.preventDefault();submitAuthForm(e.currentTarget,'/api/auth/login');});
+$('#registerForm').addEventListener('submit',e=>{e.preventDefault();submitAuthForm(e.currentTarget,'/api/auth/register');});
 function toast(message){const el=$('#toast');el.textContent=message;el.classList.add('show');clearTimeout(window.toastTimer);window.toastTimer=setTimeout(()=>el.classList.remove('show'),3000);}
 function loadingRow(cols,message='Loading…'){return `<tr><td colspan="${cols}" class="muted-cell">${esc(message)}</td></tr>`;}
 function dateRange(item){const start=dateLabel(item.startDate),end=dateLabel(item.endDate);return start===end?start:`${start} – ${end}`;}
@@ -56,7 +90,7 @@ function renderDashboard(){const total=state.employees.filter(e=>e.status!=='Ina
 async function reloadAll(){
  try{const [employees,leaves,attendance,training,announcements]=await Promise.all([api('/api/employees'),api('/api/leaves'),api(`/api/attendance?date=${todayISO()}`),api('/api/training'),api('/api/announcements')]);
  state.employees=employees;state.leaves=leaves;state.attendance=attendance;state.training=training;state.announcements=announcements;
- state.currentEmployee=employees.find(e=>/hr|people|manager/i.test(e.role+' '+e.department))||employees[0]||null;
+ state.currentEmployee=employees.find(e=>String(e._id)===String(currentUser.employeeId))||employees[0]||null;
  const name=state.currentEmployee?.name||'Team';$('#welcomeName').textContent=`Good morning, ${name}`;$('.profile-info strong').textContent=name;$('.profile-info span').textContent=state.currentEmployee?`${state.currentEmployee.role} · ${state.currentEmployee.department}`:'Add the first employee';$$('.profile .avatar,.top-actions>.avatar').forEach(x=>x.textContent=initials(name));
  $('#todayLabel').textContent=new Date().toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric',year:'numeric',timeZone:APP_TIME_ZONE}).toUpperCase();$('.date-pill').innerHTML=`${esc(new Date().toLocaleDateString(undefined,{month:'long',year:'numeric',timeZone:APP_TIME_ZONE}))}`;
  renderEmployees();renderDashboard();renderTrainings();renderAnnouncements();await loadAttendanceTrend();
@@ -98,5 +132,4 @@ function exportAttendance(){const rows=[['Employee','Department','Date','Check i
 $('#menuBtn').addEventListener('click',()=>$('#sidebar').classList.toggle('open'));$('#notifyBtn').addEventListener('click',()=>toast('You’re all caught up on notifications.'));$('#helpBtn').addEventListener('click',()=>toast('Contact your organization administrator for help.'));
 $('#globalSearch').addEventListener('keydown',e=>{if(e.key!=='Enter')return;const q=e.target.value.trim().toLowerCase();if(!q)return;const match=state.employees.some(x=>`${x.name} ${x.department} ${x.role}`.toLowerCase().includes(q));if(/leave|request/.test(q))go('leave');else if(/attendance|present|check in/.test(q))go('attendance');else if(/learn|course|training/.test(q))go('learning');else if(/news|announce/.test(q))go('announcements');else if(match){go('people');$('#peopleSearch').value=e.target.value;renderEmployees();}else{go('people');$('#peopleSearch').value=e.target.value;renderEmployees();}});
 $('#chartSelect').addEventListener('change',loadAttendanceTrend);
-reloadAll();
-
+initializeAuth();
