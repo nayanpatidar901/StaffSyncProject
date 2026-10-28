@@ -1,0 +1,139 @@
+/*
+ * StaffSync project-report styles
+ * Documentation asset only: this file is intentionally not linked from public/index.html.
+ */
+
+.project-report {
+  --report-ink: #203229;
+  --report-muted: #64746b;
+  --report-green: #167451;
+  --report-line: #dce7df;
+  --report-surface: #f4f8f4;
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 48px;
+  color: var(--report-ink);
+  background: #fff;
+  font: 16px/1.7 "Segoe UI", Arial, sans-serif;
+}
+
+.project-report h1,
+.project-report h2,
+.project-report h3 {
+  color: var(--report-ink);
+  line-height: 1.2;
+}
+
+.project-report h1 {
+  margin: 0 0 12px;
+  font-size: clamp(2rem, 5vw, 3.25rem);
+  letter-spacing: -0.04em;
+}
+
+.project-report h2 {
+  margin: 40px 0 14px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--report-line);
+  font-size: 1.6rem;
+}
+
+.project-report h3 {
+  margin: 24px 0 8px;
+  font-size: 1.15rem;
+}
+
+.project-report p,
+.project-report li {
+  color: var(--report-muted);
+}
+
+.project-report a {
+  color: var(--report-green);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+
+.project-report .report-callout {
+  margin: 24px 0;
+  padding: 18px 20px;
+  border-left: 4px solid var(--report-green);
+  border-radius: 0 10px 10px 0;
+  background: var(--report-surface);
+}
+
+.project-report .report-diagram {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 24px auto;
+  border: 1px solid var(--report-line);
+  border-radius: 12px;
+}
+
+.project-report table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 20px 0;
+}
+
+.project-report th,
+.project-report td {
+  padding: 12px 14px;
+  border: 1px solid var(--report-line);
+  text-align: left;
+  vertical-align: top;
+}
+
+.project-report th {
+  color: var(--report-ink);
+  background: var(--report-surface);
+}
+
+.project-report pre,
+.project-report code {
+  font-family: Consolas, "Courier New", monospace;
+}
+
+.project-report pre {
+  overflow-x: auto;
+  padding: 18px;
+  border-radius: 10px;
+  color: #e7f4eb;
+  background: #203229;
+}
+
+@media (max-width: 640px) {
+  .project-report {
+    padding: 24px 18px;
+    font-size: 15px;
+  }
+
+  .project-report th,
+  .project-report td {
+    padding: 9px;
+  }
+}
+
+@media print {
+  .project-report {
+    max-width: none;
+    padding: 0;
+    color: #000;
+    font-size: 11pt;
+  }
+
+  .project-report h2 {
+    break-after: avoid;
+  }
+
+  .project-report .report-callout,
+  .project-report table,
+  .project-report .report-diagram {
+    break-inside: avoid;
+  }
+
+  .project-report a {
+    color: #000;
+    text-decoration: none;
+  }
+}
